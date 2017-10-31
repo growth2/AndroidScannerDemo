@@ -6,6 +6,8 @@ import android.content.Intent;
 import android.content.res.AssetFileDescriptor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
+import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -21,6 +23,8 @@ import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+
+import static android.content.Intent.EXTRA_ALLOW_MULTIPLE;
 
 /**
  * Created by jhansi on 04/04/15.
@@ -106,9 +110,9 @@ public class PickImageFragment extends Fragment {
     }
 
     public void openMediaContent() {
-        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
         intent.setType("image/*");
+        // intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
         startActivityForResult(intent, ScanConstants.PICKFILE_REQUEST_CODE);
     }
 
@@ -147,10 +151,12 @@ public class PickImageFragment extends Fragment {
             try {
                 switch (requestCode) {
                     case ScanConstants.START_CAMERA_REQUEST_CODE:
+                        // 카메라로 이미지를 촬영한 경우
                         bitmap = getBitmap(fileUri);
                         break;
 
                     case ScanConstants.PICKFILE_REQUEST_CODE:
+                        // 이미지가 선택된 경우
                         bitmap = getBitmap(data.getData());
                         break;
                 }
@@ -160,26 +166,51 @@ public class PickImageFragment extends Fragment {
         } else {
             getActivity().finish();
         }
+
+        // 이미지를 로드했다면
         if (bitmap != null) {
             postImagePick(bitmap);
         }
     }
 
     protected void postImagePick(Bitmap bitmap) {
+        // 비트맵을 저장하고,
         Uri uri = Utils.getUri(getActivity(), bitmap);
+        // 저장한 비트맵은 더 이상 사용하지 않음으로 표시
         bitmap.recycle();
         scanner.onBitmapSelect(uri);
     }
 
     private Bitmap getBitmap(Uri selectedimg) throws IOException {
         BitmapFactory.Options options = new BitmapFactory.Options();
-        options.inSampleSize = 3;
-        AssetFileDescriptor fileDescriptor = null;
-        fileDescriptor =
-                getActivity().getContentResolver().openAssetFileDescriptor(selectedimg, "r");
-        Bitmap original
-                = BitmapFactory.decodeFileDescriptor(
-                fileDescriptor.getFileDescriptor(), null, options);
+        options.inSampleSize = 4;
+        AssetFileDescriptor fileDescriptor = getActivity().getContentResolver().openAssetFileDescriptor(selectedimg, "r");
+        Bitmap original = BitmapFactory.decodeFileDescriptor(fileDescriptor.getFileDescriptor(), null, options);
+        original = rotateImageIfRequired(original, selectedimg);
         return original;
+    }
+
+    private static Bitmap rotateImageIfRequired(Bitmap img, Uri selectedImage) throws IOException {
+        ExifInterface ei = new ExifInterface(selectedImage.getPath());
+        int orientation = ei.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
+
+        switch (orientation) {
+            case ExifInterface.ORIENTATION_ROTATE_90:
+                return rotateImage(img, 90);
+            case ExifInterface.ORIENTATION_ROTATE_180:
+                return rotateImage(img, 180);
+            case ExifInterface.ORIENTATION_ROTATE_270:
+                return rotateImage(img, 270);
+            default:
+                return img;
+        }
+    }
+
+    private static Bitmap rotateImage(Bitmap img, int degree) {
+        Matrix matrix = new Matrix();
+        matrix.postRotate(degree);
+        Bitmap rotatedImg = Bitmap.createBitmap(img, 0, 0, img.getWidth(), img.getHeight(), matrix, true);
+        img.recycle();
+        return rotatedImg;
     }
 }

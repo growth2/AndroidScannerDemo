@@ -27,16 +27,28 @@ vector<Point> getPoints(Mat image)
     Mat image_proc = image.clone();
     vector<vector<Point> > squares;
     // blur will enhance edge detection
+    // 블러처리를 하면, 엣지 검출이 더 잘된다.
     Mat blurred(image_proc);
     medianBlur(image_proc, blurred, 9);
     
     Mat gray0(blurred.size(), CV_8U), gray;
     vector<vector<Point> > contours;
-    
+
+    // http://thinkpiece.tistory.com/40
+    // OpenCV에서 칼라 이미지는 BGR 순서로 저장된다.
+
     // find squares in every color plane of the image
     for (int c = 0; c < 3; c++)
     {
         int ch[] = {c, 0};
+
+        // mixChannels(const Mat *src, int nsrc, Mat* dst, int ndst, const int *fromTo, size_t npairs);
+        // src - input array or vector of matrices.
+        // nsrc - number of matrices in src.
+        // dst - output array or vector of matrices.
+        // ndst - number of matrices in dst.
+        // fromTo - Array of index pairs specifying which channels are copied and where.
+        // npairs - number of index pairs in fromTo
         mixChannels(&blurred, 1, &gray0, 1, ch, 1);
         
         // try several threshold levels
@@ -50,6 +62,7 @@ vector<Point> getPoints(Mat image)
                 Canny(gray0, gray, 10, 20, 3); //
                 
                 // Dilate helps to remove potential holes between edge segments
+                // 확장(팽창)하다(시키다). 키우다(커지다)
                 dilate(gray, gray, Mat(), Point(-1,-1));
             }
             else
@@ -58,6 +71,7 @@ vector<Point> getPoints(Mat image)
             }
             
             // Find contours and store them in a list
+            // 윤곽선들을 추출해낸다.
             findContours(gray, contours, CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE);
             
             // Test contours
@@ -71,9 +85,9 @@ vector<Point> getPoints(Mat image)
                 // Note: absolute value of an area is used because
                 // area may be positive or negative - in accordance with the
                 // contour orientation
-                if (approx.size() == 4 &&
-                    fabs(contourArea(Mat(approx))) > 1000 &&
-                    isContourConvex(Mat(approx)))
+                if (approx.size() >= 4 &&
+                    fabs(contourArea(Mat(approx))) > 1000 && // 이거 너무 무성의한것 아닌가?
+                    isContourConvex(Mat(approx))) // 볼록하다는 의미는 무엇일까?
                 {
                     double maxCosine = 0;
                     
@@ -83,7 +97,7 @@ vector<Point> getPoints(Mat image)
                         maxCosine = MAX(maxCosine, cosine);
                     }
                     
-                    if (maxCosine < 0.3)
+                    if (maxCosine < 0.3) // 각도가 70도, cos 70 = 0.3 정도
                         squares.push_back(approx);
                 }
             }
@@ -382,7 +396,8 @@ JNIEXPORT jfloatArray JNICALL Java_com_scanlibrary_ScanActivity_getPoints
     int ret;
     AndroidBitmapInfo info;
     void* pixels = 0;
-    
+
+    // Java 비트맵 객체에 따라 AndroidBitmapInfo 구조체를 채웁니다. 호출이 실패하면 정보 매개변수를 무시합니다.
     if ((ret = AndroidBitmap_getInfo(env, bitmap, &info)) < 0) {
         __android_log_print(ANDROID_LOG_VERBOSE, APPNAME,"AndroidBitmap_getInfo() failed ! error=%d", ret);
         return 0;
@@ -392,12 +407,18 @@ JNIEXPORT jfloatArray JNICALL Java_com_scanlibrary_ScanActivity_getPoints
     {       __android_log_print(ANDROID_LOG_VERBOSE, APPNAME,"Bitmap format is not RGBA_8888!");
         return 0;
     }
-    
+
+
+    // Java 비트맵 객체에 따라 픽셀 주소 잠금을 시도합니다.
+    // 픽셀을 잠그면 unlockPixels이 호출할 때까지 픽셀에 해당하는 메모리가 이동하지 않고 픽셀이 앞서 제거되었지만 복구됩니다.
+    // 호출이 성공하면 AndroidBitmap_unlockPixels 호출로 균형을 맞추어야 합니다. 그 후에는 그 픽셀의 주소를 사용해서는 안 됩니다.
+    // 호출이 성공하면 *addrPtr가 픽셀 주소로 설정됩니다. 호출이 실패하면 addrPtr를 무시합니다.
     if ((ret = AndroidBitmap_lockPixels(env, bitmap, &pixels)) < 0) {
         __android_log_print(ANDROID_LOG_VERBOSE, APPNAME,"AndroidBitmap_lockPixels() failed ! error=%d", ret);
     }
     
     // init our output image
+    // 4채널 unsigned char
     Mat mbgra(info.height, info.width, CV_8UC4, pixels);
     vector<Point> img_pts = getPoints(mbgra);
     

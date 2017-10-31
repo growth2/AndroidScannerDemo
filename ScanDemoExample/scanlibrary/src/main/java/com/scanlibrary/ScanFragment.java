@@ -61,6 +61,7 @@ public class ScanFragment extends Fragment {
     }
 
     private void init() {
+        // 해상도를 떨어뜨린 원본 이미지
         sourceImageView = (ImageView) view.findViewById(R.id.sourceImageView);
         scanButton = (Button) view.findViewById(R.id.scanButton);
         scanButton.setOnClickListener(new ScanButtonClickListener());
@@ -69,6 +70,7 @@ public class ScanFragment extends Fragment {
         sourceFrame.post(new Runnable() {
             @Override
             public void run() {
+                // 비트맵을 로드하고, 넘어온 Uri 이미지는 제거한다.
                 original = getBitmap();
                 if (original != null) {
                     setBitmap(original);
@@ -80,7 +82,9 @@ public class ScanFragment extends Fragment {
     private Bitmap getBitmap() {
         Uri uri = getUri();
         try {
+            // 비트맵을 로드한 다음
             Bitmap bitmap = Utils.getBitmap(getActivity(), uri);
+            // 어라 지워 버리네.
             getActivity().getContentResolver().delete(uri, null, null);
             return bitmap;
         } catch (IOException e) {
@@ -95,9 +99,13 @@ public class ScanFragment extends Fragment {
     }
 
     private void setBitmap(Bitmap original) {
+        // 프레임의 크기에 맞춰 이미지 크기를 조절
         Bitmap scaledBitmap = scaledBitmap(original, sourceFrame.getWidth(), sourceFrame.getHeight());
+        // 원본이미지를 배경으로 깔고
         sourceImageView.setImageBitmap(scaledBitmap);
+        // 뷰에 할당된 비트맵을 다시 얻는다.
         Bitmap tempBitmap = ((BitmapDrawable) sourceImageView.getDrawable()).getBitmap();
+        // 4개 꼭지점의 위치를 계산해 낸다.
         Map<Integer, PointF> pointFs = getEdgePoints(tempBitmap);
         polygonView.setPoints(pointFs);
         polygonView.setVisibility(View.VISIBLE);

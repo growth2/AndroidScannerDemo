@@ -39,6 +39,7 @@ public class ScanActivity extends Activity implements IScanner, ComponentCallbac
     public void onBitmapSelect(Uri uri) {
         ScanFragment fragment = new ScanFragment();
         Bundle bundle = new Bundle();
+        // Uri 객체를 넘겨주려면, setParcelable을 사용해야 한다.
         bundle.putParcelable(ScanConstants.SELECTED_BITMAP, uri);
         fragment.setArguments(bundle);
         android.app.FragmentManager fragmentManager = getFragmentManager();

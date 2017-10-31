@@ -31,7 +31,7 @@ public class PolygonView extends FrameLayout {
     private ImageView midPointer12;
     private ImageView midPointer34;
     private ImageView midPointer24;
-    private PolygonView polygonView;
+//    private PolygonView polygonView;
 
     public PolygonView(Context context) {
         super(context);
@@ -52,7 +52,7 @@ public class PolygonView extends FrameLayout {
     }
 
     private void init() {
-        polygonView = this;
+//        polygonView = this;
         pointer1 = getImageView(0, 0);
         pointer2 = getImageView(getWidth(), 0);
         pointer3 = getImageView(0, getHeight());
@@ -197,23 +197,23 @@ public class PolygonView extends FrameLayout {
                     PointF mv = new PointF(event.getX() - DownPT.x, event.getY() - DownPT.y);
 
                     if (Math.abs(mainPointer1.getX() - mainPointer2.getX()) > Math.abs(mainPointer1.getY() - mainPointer2.getY())) {
-                        if (((mainPointer2.getY() + mv.y + v.getHeight() < polygonView.getHeight()) && (mainPointer2.getY() + mv.y > 0))) {
+                        if (((mainPointer2.getY() + mv.y + v.getHeight() < getHeight()) && (mainPointer2.getY() + mv.y > 0))) {
                             v.setX((int) (StartPT.y + mv.y));
                             StartPT = new PointF(v.getX(), v.getY());
                             mainPointer2.setY((int) (mainPointer2.getY() + mv.y));
                         }
-                        if (((mainPointer1.getY() + mv.y + v.getHeight() < polygonView.getHeight()) && (mainPointer1.getY() + mv.y > 0))) {
+                        if (((mainPointer1.getY() + mv.y + v.getHeight() < getHeight()) && (mainPointer1.getY() + mv.y > 0))) {
                             v.setX((int) (StartPT.y + mv.y));
                             StartPT = new PointF(v.getX(), v.getY());
                             mainPointer1.setY((int) (mainPointer1.getY() + mv.y));
                         }
                     } else {
-                        if ((mainPointer2.getX() + mv.x + v.getWidth() < polygonView.getWidth()) && (mainPointer2.getX() + mv.x > 0)) {
+                        if ((mainPointer2.getX() + mv.x + v.getWidth() < getWidth()) && (mainPointer2.getX() + mv.x > 0)) {
                             v.setX((int) (StartPT.x + mv.x));
                             StartPT = new PointF(v.getX(), v.getY());
                             mainPointer2.setX((int) (mainPointer2.getX() + mv.x));
                         }
-                        if ((mainPointer1.getX() + mv.x + v.getWidth() < polygonView.getWidth()) && (mainPointer1.getX() + mv.x > 0)) {
+                        if ((mainPointer1.getX() + mv.x + v.getWidth() < getWidth()) && (mainPointer1.getX() + mv.x > 0)) {
                             v.setX((int) (StartPT.x + mv.x));
                             StartPT = new PointF(v.getX(), v.getY());
                             mainPointer1.setX((int) (mainPointer1.getX() + mv.x));
@@ -238,7 +238,7 @@ public class PolygonView extends FrameLayout {
                 default:
                     break;
             }
-            polygonView.invalidate();
+            invalidate();
             return true;
         }
     }
@@ -263,7 +263,7 @@ public class PolygonView extends FrameLayout {
             switch (eid) {
                 case MotionEvent.ACTION_MOVE:
                     PointF mv = new PointF(event.getX() - DownPT.x, event.getY() - DownPT.y);
-                    if (((StartPT.x + mv.x + v.getWidth()) < polygonView.getWidth() && (StartPT.y + mv.y + v.getHeight() < polygonView.getHeight())) && ((StartPT.x + mv.x) > 0 && StartPT.y + mv.y > 0)) {
+                    if (((StartPT.x + mv.x + v.getWidth()) < getWidth() && (StartPT.y + mv.y + v.getHeight() < getHeight())) && ((StartPT.x + mv.x) > 0 && StartPT.y + mv.y > 0)) {
                         v.setX((int) (StartPT.x + mv.x));
                         v.setY((int) (StartPT.y + mv.y));
                         StartPT = new PointF(v.getX(), v.getY());
@@ -286,7 +286,7 @@ public class PolygonView extends FrameLayout {
                 default:
                     break;
             }
-            polygonView.invalidate();
+            invalidate();
             return true;
         }
 
